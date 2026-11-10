@@ -3,40 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olá, Mundo!</title>
+    <title>Agenda Kids - Controle Diário</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            background-color: var(--background);
+            color: var(--text-main);
+            padding: 20px 12px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
         }
-        .card {
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        header {
             text-align: center;
+            margin-bottom: 24px;
         }
-        h1 {
-            color: #2f80ed;
-            margin-bottom: 10px;
+
+        header h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            margin-bottom: 6px;
         }
-        p {
-            color: #666;
+
+        /* Seletor de Perfil (Pai vs Cuidador) */
+        .profile-selector {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .profile-btn {
+            flex: 1;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .profile-btn.active {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* Cartões */
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Formulários */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        button.btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button.btn-submit:hover {
+            opacity: 0.9;
+        }
+
+        /* Linha do Tempo da Agenda */
+        .timeline {
+            list-style: none;
+            position: relative;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 16px;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 17px;
+            top: 36px;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px 14px;
+            flex: 1;
+            border-left: 3px solid var(--primary);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .timeline-text {
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Olá, Mundo! 🚀</h1>
-        <p>Parabéns, Luis! Seu ambiente de desenvolvimento está pronto.</p>
+<div class="container">
+    <header>
+        <h1>🍼 Agenda Kids</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Controle compartilhado entre cuidador e família</p>
+    </header>
+
+    <!-- Barra de Alternância de Visão -->
+    <div class="profile-selector">
+        <button class="profile-btn active" onclick="switchView('cuidador')">🧸 Área do Cuidador</button>
+        <button class="profile-btn" onclick="switchView('pais')">👨‍👩‍👧 Área dos Pais</button>
     </div>
+
+    <!-- ==================== VISÃO DO CUIDADOR ==================== -->
+    <div id="view-cuidador" class="view-section active">
+        <!-- Formulário de Registro de Rotina -->
+        <div class="card">
+            <h2>📝 Registrar Atividade</h2>
+            <form id="form-atividade" onsubmit="salvarAtividade(event)">
+                <div class="form-group">
+                    <label>Tipo de Evento</label>
+                    <select id="tipo-atividade" required>
+                        <option value="alimentacao">🍼 Alimentação (Mamadeira / Refeição)</option>
+                        <option value="sono">😴 Soneca / Descanso</option>
+                        <option value="higiene">💩 Fralda / Banho</option>
+                        <option value="remedio">💊 Medicamento Administrado</option>
+                        <option value="geral">📌 Outro Registro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <input type="time" id="hora-atividade" required>
+                </div>
+                <div class="form-group">
+                    <label>Observação / Detalhes</label>
+                    <input type="text" id="desc-atividade" placeholder="Ex: Comeu toda a fruta às 10h" required>
+                </div>
+                <button type="submit" class="btn-submit">Publicar na Agenda</button>
+            </form>
+        </div>
+
+        <!-- Avisos Enviados pelos Pais -->
+        <div class="card">
+            <h2>🔔 Recados & Instruções dos Pais</h2>
+            <div id="lista-recados-cuidador" class="empty-state">Nenhum recado pendente dos pais.</div>
+        </div>
+    </div>
+
+    <!-- ==================== VISÃO DOS PAIS ==================== -->
+    <div id="view-pais" class="view-section">
+        <!-- Enviar aviso de remédio / recado -->
+        <div class="card">
+            <h2>✉️ Enviar Recado para o Cuidador</h2>
+            <form id="form-recado-pais" onsubmit="salvarRecadoPais(event)">
+                <div class="form-group">
+                    <label>Instrução ou Aviso Importante</label>
+                    <textarea id="texto-recado" rows="2" placeholder="Ex: Dar 5 gotas de analgésico caso sinta febre após as 14h" required></textarea>
+                </div>
+                <button type="submit" class="btn-submit" style="background-color: var(--success);">Enviar Instrução</button>
+            </form>
+        </div>
+
+        <!-- Linha do Tempo da Criança -->
+        <div class="card">
+            <h2>📅 Acompanhamento do Dia</h2>
+            <ul id="timeline-pais" class="timeline">
+                <!-- Itens carregados via JS -->
+            </ul>
+            <div id="empty-timeline" class="empty-state">Ainda não há registros de atividades para hoje.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Inicialização de chaves no LocalStorage
+    const ATIVIDADES_KEY = 'agenda_kids_atividades';
+    const RECADOS_KEY = 'agenda_kids_recados';
+
+    // Carregar horário atual automaticamente no input
+    window.addEventListener('DOMContentLoaded', () => {
+        const agora = new Date();
+        const horas = String(agora.getHours()).padStart(2, '0');
+        const minutos = String(agora.getMinutes()).padStart(2, '0');
+        document.getElementById('hora-atividade').value = `${horas}:${minutos}`;
+        atualizarTelas();
+    });
+
+    // Alternar abas entre Cuidador e Pais
+    function switchView(perfil) {
+        document.querySelectorAll('.profile-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+
+        if (perfil === 'cuidador') {
+            document.querySelectorAll('.profile-btn')[0].classList.add('active');
+            document.getElementById('view-cuidador').classList.add('active');
+        } else {
+            document.querySelectorAll('.profile-btn')[1].classList.add('active');
+            document.getElementById('view-pais').classList.add('active');
+        }
+        atualizarTelas();
+    }
+
+    // Salvar atividade lançada pelo cuidador
+    function salvarAtividade(e) {
+        e.preventDefault();
+        const tipo = document.getElementById('tipo-atividade').value;
+        const hora = document.getElementById('hora-atividade').value;
+        const descricao = document.getElementById('desc-atividade').value;
+
+        const icones = {
+            alimentacao: '🍼',
+            sono: '😴',
+            higiene: '💩',
+            remedio: '💊',
+            geral: '📌'
+        };
+
+        const novaAtividade = {
+            id: Date.now(),
+            tipo,
+            icone: icones[tipo] || '📌',
+            hora,
+            descricao,
+            data: new Date().toLocaleDateString('pt-BR')
+        };
+
+        const lista = JSON.parse(localStorage.getItem(ATIVIDADES_KEY) || '[]');
+        lista.unshift(novaAtividade);
+        localStorage.setItem(ATIVIDADES_KEY, JSON.stringify(lista));
+
+        document.getElementById('desc-atividade').value = '';
+        alert('Atividade registrada na agenda!');
+        atualizarTelas();
+    }
+
+    // Salvar recado enviado pelos pais
+    function salvarRecadoPais(e) {
+        e.preventDefault();
+        const texto = document.getElementById('texto-recado').value;
+
+        const novoRecado = {
+            id: Date.now(),
+            texto,
+            hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        const lista = JSON.parse(localStorage.getItem(RECADOS_KEY) || '[]');
+        lista.unshift(novoRecado);
+        localStorage.setItem(RECADOS_KEY, JSON.stringify(lista));
+
+        document.getElementById('texto-recado').value = '';
+        alert('Instrução enviada ao cuidador!');
+        atualizarTelas();
+    }
+
+    // Renderizar informações em ambas as telas
+    function atualizarTelas() {
+        const atividades = JSON.parse(localStorage.getItem(ATIVIDADES_KEY) || '[]');
+        const recados = JSON.parse(localStorage.getItem(RECADOS_KEY) || '[]');
+
+        // 1. Atualizar Linha do Tempo (Área dos Pais)
+        const timelineList = document.getElementById('timeline-pais');
+        const emptyTimeline = document.getElementById('empty-timeline');
+        timelineList.innerHTML = '';
+
+        if (atividades.length === 0) {
+            emptyTimeline.style.display = 'block';
+        } else {
+            emptyTimeline.style.display = 'none';
+            atividades.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'timeline-item';
+                li.innerHTML = `
+                    <div class="timeline-badge">${item.icone}</div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <strong>${item.tipo.toUpperCase()}</strong>
+                            <span>${item.hora}</span>
+                        </div>
+                        <div class="timeline-text">${item.descricao}</div>
+                    </div>
+                `;
+                timelineList.appendChild(li);
+            });
+        }
+
+        // 2. Atualizar Lista de Recados (Área do Cuidador)
+        const listaRecados = document.getElementById('lista-recados-cuidador');
+        if (recados.length === 0) {
+            listaRecados.innerHTML = 'Nenhum recado pendente dos pais.';
+            listaRecados.classList.add('empty-state');
+        } else {
+            listaRecados.classList.remove('empty-state');
+            listaRecados.innerHTML = recados.map(r => `
+                <div style="background: #fef3c7; border-left: 4px solid var(--warning); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                    <div style="font-size: 0.8rem; color: #92400e; font-weight: bold; margin-bottom: 4px;">Enviado às ${r.hora}</div>
+                    <div style="font-size: 0.95rem; color: #78350f;">${r.texto}</div>
+                </div>
+            `).join('');
+        }
+    }
+</script>
 
 </body>
 </html>
